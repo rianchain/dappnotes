@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.1/dist/web3.min.js"></script>
+</head>
+<body>
+
+<!-- -----------------------------NAVBAR----------------------------- --->
+
+<nav class="navbar">
+    <button id="connectButton">Connect to Wallet</button>
+    <div id="addressDisplay">Address: </div>
+    <div id="balanceDisplay">Balance: </div>
+</nav>
+
+<!-- ----------------------------- TUTUP NAVBAR----------------------------- --->
+
+
+<!-- -------------------------------NOTES -->
+<div class="judul-header">
+    <h1>notes</h1>
+</div>
+
+    <div class="note-container">
+    <textarea id="textInput" placeholder="Catat disini..."></textarea>  
+<!-- <input type="text" id="textInput" placeholder="Enter text here"> -->
+    <button id="save-button" onclick="setText()">SIMPAN</button>
+    <button id="tampilkan" onclick="getText()">TAMPILKAN</button>
+    </div>
+
+    <div class="output-container">
+    <div class="textOutput" id="textOutput"></div>
+    </div>
+
+    <!-- ----------------------------------TUTUP NOTES -->
+
+    <script>
+        
+        let notesList = [];
+
+
+
+document.getElementById('connectButton').addEventListener('click', async () => {
+    if (window.ethereum) {
+        window.web3 = new Web3(ethereum);
+        try {
+            await ethereum.enable();
+            const accounts = await web3.eth.getAccounts();
+            const address = accounts[0];
+            document.getElementById('addressDisplay').innerText = `Address: ${address}`;
+
+            const balance = await web3.eth.getBalance(address);
+            const balanceInEth = web3.utils.fromWei(balance, 'ether');
+            document.getElementById('balanceDisplay').innerText = `Balance: ${balanceInEth} ETH`;
+
+            connectButton.textContent = 'Connected';
+            connectButton.disabled = true;
+        } catch (error) {
+            console.error("User denied account access");
+        }
+    } else {
+        alert('Non-Ethereum browser detected. You should consider trying MetaMask!');
+    }
+});
+
+
+        // Contoh koneksi ke Ethereum menggunakan MetaMask
+async function connectWeb3() {
+    if (window.ethereum) {
+        window.web3 = new Web3(ethereum);
+        try {
+            // Meminta pengguna untuk mengizinkan akses ke alamat Ethereum mereka
+            await ethereum.enable();
+            console.log("berhasil");
+        } catch (error) {
+            console.error("User denied account access");
+        }
+    } else if (window.web3) {
+        window.web3 = new Web3(web3.currentProvider);
+    } else {
+        console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+    }
+}
+
+
+
+// Alamat smart contract yang telah diterapkan
+const contractAddress = '0x4C9160ffb8BD7C7BbC1741180aB84C9d57921af2';
+
+// ABI dari smart contract Anda
+const contractABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "text",
+				"type": "string"
+			}
+		],
+		"name": "setText",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getText",
+		"outputs": [
+			{
+				"internalType": "string[]",
+				"name": "",
+				"type": "string[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+// Membuat instance dari smart contract
+let contractInstance;
+
+// Fungsi untuk mengatur teks
+// async function setText() {
+//     const text = document.getElementById('textInput').value;
+//     await contractInstance.methods.setText(text).send({from: window.ethereum.selectedAddress});
+// }
+
+async function setText() {
+    const text = document.getElementById('textInput').value;
+    await contractInstance.methods.setText(text).send({ from: window.ethereum.selectedAddress });
+    // Menambahkan teks ke dalam daftar catatan
+    notesList.push(text);
+}
+
+async function getText() {
+    // Mengambil daftar catatan dari smart contract
+    const contractTexts = await contractInstance.methods.getText().call();
+    // Menampilkan daftar catatan dari smart contract
+    document.getElementById('textOutput').innerText = contractTexts.join('\n');
+
+    // Menampilkan daftar catatan lokal (yang baru ditambahkan)
+    if (notesList.length > 0) {
+        document.getElementById('textOutput').innerText += '\n\nLocal Notes:\n' + notesList.join('\n');
+    }
+}
+
+
+
+
+
+
+// Fungsi untuk mendapatkan teks
+// async function getText() {
+//     const text = await contractInstance.methods.getText().call();
+//     document.getElementById('textOutput').innerText = text;
+    
+// }
+
+// Fungsi untuk menginisialisasi halaman
+async function init() {
+    await connectWeb3();
+    contractInstance = new window.web3.eth.Contract(contractABI, contractAddress);
+}
+
+init();
+
+    </script>
+
+<footer class="footer">Made by @Riannz.eth</footer>
+</body>
+</html>
